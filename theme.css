@@ -1,0 +1,11 @@
+/* @theme coop */
+
+@import 'default';
+
+section {
+	padding: 80px;
+}
+
+h1 {
+	text-align: center;
+}
