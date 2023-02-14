@@ -218,6 +218,8 @@ CREATE USER [application] FROM EXTERNAL PROVIDER
 GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE TO [application];
 ```
 
+---
+
 ### Update connection string
 
 Spread over multiple lines for readability.
