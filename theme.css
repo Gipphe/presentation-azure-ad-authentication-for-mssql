@@ -4,6 +4,7 @@
 
 section {
 	padding: 80px;
+	justify-content: flex-start;
 }
 
 h1 {

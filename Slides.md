@@ -3,6 +3,12 @@ marp: true
 theme: coop
 ---
 
+<style scoped>
+  section {
+    justify-content: center;
+  }
+</style>
+
 # Azure AD authentication for MSSQL
 
 ---
@@ -17,6 +23,9 @@ theme: coop
 ---
 
 <style scoped>
+  section {
+    justify-content: center;
+  }
   h2 {
     text-align: center;
   }
@@ -49,14 +58,18 @@ GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE TO application;
 ### Get credentials from Key Vault in Terraform
 
 ```hcl
+resource "azurerm_key_vault" "main" {
+  // ...
+}
+
 data "azurerm_key_vault_secret" "db_username" {
   name         = "db-username"
-  key_vault_id = data.azurerm_key_vault.main.id
+  key_vault_id = azurerm_key_vault.main.id
 }
 
 data "azurerm_key_vault_secret" "db_password" {
   name         = "db-password"
-  key_vault_id = data.azurerm_key_vault.main.id
+  key_vault_id = azurerm_key_vault.main.id
 }
 ```
 
@@ -67,6 +80,10 @@ data "azurerm_key_vault_secret" "db_password" {
 Spread over multiple lines for readability.
 
 ```terraform
+resource "azurerm_mssql_server" "main" {
+  // ...
+}
+
 module "app" {
   name = "application"
   // ...
@@ -74,10 +91,10 @@ module "app" {
     // ...
     "DB_CONNECTION_STRING" = <<-EOT
       Driver={ODBC Driver 18 for SQL Server};
-      Server={${azurerm_mssql_server.main.  fully_qualified_domain_name}};
+      Server={${azurerm_mssql_server.main.fully_qualified_domain_name}};
       Database={${azurerm_mssql_database.main.name}};
-      Uid=${data.azurerm_key_vault_secret.db_username.value};
-      Pwd=${data.azurerm_key_vault_secret.db_password.value};
+      Uid=${azurerm_key_vault_secret.db_username.value};
+      Pwd=${azurerm_key_vault_secret.db_password.value};
       Encrypt=yes;
     EOT
   }
@@ -97,6 +114,9 @@ Secrets are:
 ---
 
 <style scoped>
+  section {
+    justify-content: center;
+  }
   h2 {
     text-align: center;
   }
@@ -212,8 +232,8 @@ Spread over multiple lines for readability.
         Driver={ODBC Driver 18 for SQL Server};
         Server={${azurerm_mssql_server.main.  fully_qualified_domain_name}};
         Database={${azurerm_mssql_database.main.name}};
--       Uid=${data.azurerm_key_vault_secret.db_username.value};
--       Pwd=${data.azurerm_key_vault_secret.db_password.value};
+-       Uid=${azurerm_key_vault_secret.db_username.value};
+-       Pwd=${azurerm_key_vault_secret.db_password.value};
 +       Authentication=ActiveDirectoryMsi;
         Encrypt=yes;
       EOT
@@ -250,14 +270,18 @@ Spread over multiple lines for readability.
 ### Delete secrets from Terraform
 
 ```diff
+  resource "azurerm_key_vault" "main" {
+    // ...
+  }
+
 - data "azurerm_key_vault_secret" "db_username" {
 -   name         = "db-username"
--   key_vault_id = data.azurerm_key_vault.main.id
+-   key_vault_id = azurerm_key_vault.main.id
 - }
 -
 - data "azurerm_key_vault_secret" "db_password" {
 -   name         = "db-password"
--   key_vault_id = data.azurerm_key_vault.main.id
+-   key_vault_id = azurerm_key_vault.main.id
 - }
 ```
 
@@ -280,6 +304,7 @@ Spread over multiple lines for readability.
 
 - Messy documentation
   - ![Tabs](./img/tabs.png)
+- No support outside of select drivers
 
 ---
 
@@ -293,6 +318,9 @@ Spread over multiple lines for readability.
 ---
 
 <style scoped>
+  section {
+    justify-content: center;
+  }
   h2 {
     text-align: center;
   }
@@ -312,8 +340,8 @@ module "app" {
     // ...
     "DB_CONNECTION_STRING" = <<-EOT
       DSN=MSSQLDB;
-      Uid=${data.azurerm_key_vault_secret.db_username.value};
-      Pwd=${data.azurerm_key_vault_secret.db_password.value};
+      Uid=${azurerm_key_vault_secret.db_username.value};
+      Pwd=${azurerm_key_vault_secret.db_password.value};
       Encrypt=yes;
     EOT
   }
@@ -336,6 +364,9 @@ TDS_Version = 7.2
 ---
 
 <style scoped>
+  section {
+    justify-content: center;
+  }
   h3 {
     text-align: center;
   }
@@ -366,23 +397,26 @@ Drawbacks:
 ---
 
 <style scoped>
-  h4 {
+  section {
+    justify-content: center;
+  }
+  h3 {
     text-align: center;
   }
 </style>
 
-#### Issues
+### Issues
 
 ---
 
-##### `NVARCHAR(MAX)`-issue
+#### `NVARCHAR(MAX)`-issue
 
 - Breaks every single query on a table with a `NVARCHAR(MAX)` column
 - Fix: convert all `NVARCHAR(MAX)` columns to `NVARCHAR(4000)`
 
 ---
 
-##### Encoding
+#### Encoding
 
 - FreeTDS sent `UTF-8`
 - msodbc18 sends `windows-1252`
